@@ -11,8 +11,8 @@
 | **Arguments** | None |
 | **Returns** | `restored` · `restored-fallback` · `left-on-aux` · `skipped` |
 | **Partner script** | [`ecobee_aux_heat_on`](../ecobee-aux-heat-on/) |
-| **Version** | 1.0.0 |
-| **Last updated** | 2026-10-05 |
+| **Version** | 1.1.0 |
+| **Last updated** | 2026-10-22 |
 
 ---
 
@@ -67,7 +67,7 @@ Edit these constants at the top of the script.
 
 | Constant | Type | Default | Description |
 |---|---|---|---|
-| `FALLBACK_MODE` | string or `null` | `'heat'` | Mode to use if the ecobee is on `auxHeatOnly` but no mode was saved. `'heat'` or `'auto'` (also accepts `'cool'` / `'off'`). Use `null` to leave the ecobee on aux in that case. |
+| `FALLBACK_MODE` | string or `null` | `'heat'` | Mode to use if the ecobee is on `auxHeatOnly` but no mode was saved. `'heat'` or `'auto'` only, so this script can never turn on cooling or switch heating off. Use `null` to leave the ecobee on aux in that case. |
 | `THERMOSTAT_NAME` | string | `''` | Which thermostat to control. Empty means the first thermostat on the account. Otherwise use the name exactly as shown in the ecobee app. **Must match the on script.** |
 
 Internal constants (normally left alone):
@@ -159,7 +159,7 @@ ecobee 'Main Floor': auxHeatOnly -> heat (no saved mode; used FALLBACK_MODE).
 
 | Message | Cause | Fix |
 |---|---|---|
-| `FALLBACK_MODE 'x' is not valid…` | Typo in `FALLBACK_MODE`. | Use `'heat'`, `'auto'`, `'cool'`, `'off'` or `null`. |
+| `FALLBACK_MODE 'x' is not valid…` | Typo in `FALLBACK_MODE`. | Use `'heat'`, `'auto'` or `null`. |
 | `Not authorized — run ecobee_auth_start then ecobee_auth_finish first.` | API key or tokens missing from storage. | Complete the [One-time setup](../ecobee-aux-heat-on/#one-time-setup). |
 | `ecobee token refresh failed: 400 …` / `401 …` | The refresh token is no longer valid. | Redo the One-time setup. |
 | `No thermostat named 'X'. Found: …` | `THERMOSTAT_NAME` doesn't match. | Copy a name from the "Found" list. Use the same value in both scripts. |
@@ -170,7 +170,7 @@ ecobee 'Main Floor': auxHeatOnly -> heat (no saved mode; used FALLBACK_MODE).
 
 - **One thermostat per run.** Controls the first thermostat, or the one named in `THERMOSTAT_NAME`.
 - **One saved mode.** Only the most recent switch is remembered. That's fine for one peak period at a time.
-- **The token refresh rewrites storage on every run** — see the on script's [Limitations](../ecobee-aux-heat-on/#limitations).
+- **Token refresh** — see the on script's [Limitations](../ecobee-aux-heat-on/#limitations).
 - **Shared code.** The token and API helper functions are duplicated in the on script. Fix both if one changes.
 
 ## Related scripts
@@ -182,4 +182,5 @@ ecobee 'Main Floor': auxHeatOnly -> heat (no saved mode; used FALLBACK_MODE).
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.1.0 | 2026-10-22 | Only ever restores `heat` or `auto` (a saved `heat` always comes back as `heat`); `FALLBACK_MODE` can no longer be `cool`/`off`. Reuses a still-valid access token. |
 | 1.0.0 | 2026-10-05 | First version. Split from the single `ecobee_emergency_heat.js` script; restores the saved mode instead of always `auto`, and leaves manual changes alone. |

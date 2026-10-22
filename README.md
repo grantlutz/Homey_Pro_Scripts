@@ -12,6 +12,8 @@ Scripts are deliberately small and single-purpose. **Timing, schedules and decis
 |---|---|---|
 | Climate | [`ecobee-aux-heat-on`](climate/ecobee-aux-heat-on/) | Saves the ecobee's current HVAC mode, then switches to `auxHeatOnly` (emergency heat / propane furnace only). Use at the start of a utility peak period. |
 | Climate | [`ecobee-aux-heat-off`](climate/ecobee-aux-heat-off/) | Restores the mode saved by `ecobee-aux-heat-on`. Use at the end of the peak period. |
+| Climate | [`ecobee-auth-start`](climate/ecobee-auth-start/) | One-time ecobee API setup, step 1: get a PIN. |
+| Climate | [`ecobee-auth-finish`](climate/ecobee-auth-finish/) | One-time ecobee API setup, step 2: save the tokens. |
 
 See the [climate README](climate/) for how the ecobee scripts work together.
 
