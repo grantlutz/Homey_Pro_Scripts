@@ -6,6 +6,8 @@ Scripts for thermostats, heating and cooling.
 |---|---|
 | [`ecobee-aux-heat-on`](ecobee-aux-heat-on/) | Saves the ecobee's current mode and switches to `auxHeatOnly` (propane only). |
 | [`ecobee-aux-heat-off`](ecobee-aux-heat-off/) | Restores the saved mode. |
+| [`ecobee-auth-start`](ecobee-auth-start/) | One-time setup, step 1: saves the API key and gets an ecobee PIN. |
+| [`ecobee-auth-finish`](ecobee-auth-finish/) | One-time setup, step 2: exchanges the approved PIN for tokens. |
 
 ---
 
@@ -45,6 +47,7 @@ sequenceDiagram
 | Normal day, ecobee in `heat` | Saves `heat`, switches to aux | Restores `heat` |
 | Normal day, ecobee in `auto` | Saves `auto`, switches to aux | Restores `auto` |
 | Summer, ecobee in `cool` | Skips — furnace never starts | Skips |
+| `auto` while cooling, or warm outside | Skips | Skips |
 | Heating turned `off` | Skips | Skips |
 | You change the mode by hand during the peak | — | Skips, keeps your change |
 | Peak-start Flow fires twice | Second run does nothing; saved mode kept | Restores the original mode |
@@ -63,4 +66,4 @@ Both scripts must agree on:
 
 Both scripts read the ecobee API key and tokens that the one-time auth scripts store (`ecobee_api_key`, `ecobee_tokens`). See [One-time setup](ecobee-aux-heat-on/#one-time-setup).
 
-> The auth scripts (`ecobee_auth_start`, `ecobee_auth_finish`) still need to be added to this repo.
+Run [`ecobee_auth_start`](ecobee-auth-start/), approve the PIN in the ecobee portal, then run [`ecobee_auth_finish`](ecobee-auth-finish/).

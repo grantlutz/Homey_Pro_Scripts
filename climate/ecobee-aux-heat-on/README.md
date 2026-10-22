@@ -11,8 +11,8 @@
 | **Arguments** | None |
 | **Returns** | `switched` · `already-aux` · `skipped` |
 | **Partner script** | [`ecobee_aux_heat_off`](../ecobee-aux-heat-off/) |
-| **Version** | 1.0.0 |
-| **Last updated** | 2026-10-05 |
+| **Version** | 1.1.0 |
+| **Last updated** | 2026-10-22 |
 
 ---
 
@@ -48,6 +48,7 @@ The ecobee has one **HVAC mode** setting. It is a persistent setting, not a temp
 | `auto` | Switch to `auxHeatOnly` | `auto` | `switched` |
 | `auxHeatOnly` | Nothing. The saved mode is **not** overwritten, so a second run can't make the off script "restore" aux. | unchanged | `already-aux` |
 | `cool` or `off` | Nothing. The furnace should never start in summer or when heating is off. | unchanged | `skipped` |
+| `auto`, but cooling right now or at/above `AUTO_SKIP_OUTDOOR_F` outside | Nothing. Same reasoning as `cool`: it's warm, so no heating. | unchanged | `skipped` |
 
 ### Step by step
 
@@ -72,12 +73,12 @@ The ecobee API needs an API key and an authorized token pair, stored on the Home
 2. Enter the PIN in the ecobee web portal under **My Apps** to approve access.
 3. Run **`ecobee_auth_finish`** — exchanges the approval for tokens and saves them.
 
-> **Note:** the two auth scripts are not in this repository yet. Whatever performs the setup must leave these values in HomeyScript storage:
+See [`ecobee_auth_start`](../ecobee-auth-start/) and [`ecobee_auth_finish`](../ecobee-auth-finish/). They leave these values in HomeyScript storage:
 >
 > | Key | Value |
 > |---|---|
 > | `ecobee_api_key` | Your ecobee API key, as a string |
-> | `ecobee_tokens` | An object: `{ access_token: '…', refresh_token: '…' }` |
+> | `ecobee_tokens` | An object: `{ access_token, refresh_token, expires_at }` |
 
 This only has to be redone if the tokens become invalid (for example, the app is removed in the ecobee portal or the Homey goes a long time without running either script).
 
@@ -88,6 +89,7 @@ Edit these constants at the top of the script.
 | Constant | Type | Default | Description |
 |---|---|---|---|
 | `SWITCH_FROM_MODES` | array of strings | `['heat', 'auto']` | The script only switches to aux heat when the ecobee is in one of these modes. `cool` and `off` are left out on purpose. |
+| `AUTO_SKIP_OUTDOOR_F` | number or `null` | `65` | Only applies in `auto`. Skips when ecobee's outdoor temperature is at or above this (°F). The script also always skips in `auto` while the ecobee is cooling. `null` keeps only the cooling check. Never affects `heat`. |
 | `THERMOSTAT_NAME` | string | `''` | Which thermostat to control. Empty means the first thermostat on the account. Otherwise use the name exactly as shown in the ecobee app. **Must match the off script.** |
 
 Internal constants (normally left alone):
@@ -121,7 +123,7 @@ All in HomeyScript persistent storage (`global.get` / `global.set`), shared with
 | Key | Read / written | Contents |
 |---|---|---|
 | `ecobee_api_key` | Read | ecobee developer API key (string). |
-| `ecobee_tokens` | Read and written | `{ access_token, refresh_token }`. Rewritten on every run with the refreshed pair. |
+| `ecobee_tokens` | Read, sometimes written | `{ access_token, refresh_token, expires_at }`. Reused while the access token has 5+ minutes left; otherwise refreshed and rewritten. |
 | `ecobee_mode_before_aux` | Written (only when switching) | `{ mode: 'heat' \| 'auto', savedAt: '<ISO timestamp>', thermostat: '<ecobee identifier>' }`. Cleared by the off script. |
 
 ## Flow tags created
@@ -181,7 +183,7 @@ ecobee 'Main Floor': skipped — mode is 'cool', only switches from heat/auto.
 
 - **One thermostat per run.** Controls the first thermostat, or the one named in `THERMOSTAT_NAME`.
 - **The mode stays on aux until changed.** If the peak-end Flow doesn't run (Homey offline, Flow disabled), the ecobee stays in `auxHeatOnly`. Consider the safety-net Flow described in the [off script](../ecobee-aux-heat-off/#using-it-in-flows).
-- **The token refresh rewrites storage on every run.** If the Homey loses power between ecobee issuing a new refresh token and the script saving it, the One-time setup has to be redone.
+- **Token refresh.** When a refresh is needed, the new pair is saved straight away. If the Homey loses power in between, the One-time setup has to be redone. Reusing a still-valid access token keeps refreshes to roughly one per peak window.
 - **Shared code.** HomeyScript scripts can't import from each other, so the token and API helper functions are duplicated in the off script. Fix both if one changes.
 
 ## Related scripts
@@ -193,4 +195,5 @@ ecobee 'Main Floor': skipped — mode is 'cool', only switches from heat/auto.
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.1.0 | 2026-10-22 | Skips `auto` when the ecobee is cooling or it's warm outside (`AUTO_SKIP_OUTDOOR_F`). Reuses a still-valid access token instead of refreshing every run. Auth scripts added. |
 | 1.0.0 | 2026-10-05 | First version. Split from the single `ecobee_emergency_heat.js` script; adds save-and-restore of the previous mode and skips `cool`/`off`. |
